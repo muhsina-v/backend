@@ -103,5 +103,11 @@ const removeFromCart = async (req, res) => {
 };
 
 //admin part
+const addToCar = async (req, res, next) => {
+  const { productID, quantity } = req.body;
+  const userID = req.user.id;
+  console.log(userID);
+};
+//eeeeeeeeeeeeee
 
 export { addToCart, getUserCart, updateUserCart, removeFromCart };
