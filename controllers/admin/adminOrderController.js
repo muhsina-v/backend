@@ -2,7 +2,6 @@ import mongoose from "mongoose";
 import Orders from "../../models/ordersSchema.js";
 import CustomError from "../../utils/customError.js";
 
-// get all the total orders
 const getTotalOrders = async (req, res) => {
   const totalOrders = await Orders.find()
     .populate("products.productID", "name price image")
@@ -13,7 +12,6 @@ const getTotalOrders = async (req, res) => {
   res.status(200).json({ data: totalOrders });
 };
 
-// get all the order of user
 const getOrderByUser = async (req, res) => {
   //checking id format valid or not
   if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
@@ -28,33 +26,7 @@ const getOrderByUser = async (req, res) => {
   res.status(200).json({ data: orders });
 };
 
-const getSingleOrderByUser = async (req, res, next) => {
-  const { orderID, userID } = req.params;
-
-  if (
-    !mongoose.Types.ObjectId.isValid(orderID) ||
-    !mongoose.Types.ObjectId.isValid(userID)
-  ) {
-    return next(new CustomError("Invalid ID format", 400));
-  }
-
-  try {
-    const order = await Orders.findOne({ _id: orderID, userID }).populate(
-      "products.productID",
-      "name price image"
-    );
-
-    if (!order) {
-      return next(new CustomError("Order not found", 404));
-    }
-
-    res.status(200).json({ data: order });
-  } catch (err) {
-    return next(new CustomError("Order not found", 404));
-  }
-};
-
-// get the total numberorder
+//  total numberorder
 const totalPurchaseOfOrders = async (req, res) => {
   const confirmedOrders = await Orders.aggregate([
     { $match: { shippingStatus: { $ne: "Cancelled" } } },
@@ -67,7 +39,7 @@ const totalPurchaseOfOrders = async (req, res) => {
   res.status(200).json({ data: confirmedOrders[0].confirmedOrders });
 };
 
-// will update the shipping status
+//shipping status
 const updateShippingStatus = async (req, res, next) => {
   //checking id format valid or not
   if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
@@ -86,7 +58,7 @@ const updateShippingStatus = async (req, res, next) => {
     .json({ message: "Order shipping status updated successfully" });
 };
 
-// updating the payment status
+//payment status
 const updatePaymentStatus = async (req, res, next) => {
   //checking id format valid or not
   if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
@@ -105,7 +77,7 @@ const updatePaymentStatus = async (req, res, next) => {
     .json({ message: "Order payment status updated successfully" });
 };
 
-// getting the total revenue
+//total amt
 const getTotalStats = async (req, res) => {
   const totalStats = await Orders.aggregate([
     { $match: { shippingStatus: { $ne: "Cancelled" }, paymentStatus: "Paid" } }, // deconstruct the 'products' array
@@ -136,6 +108,5 @@ export {
   updateShippingStatus,
   updatePaymentStatus,
   getOrderByUser,
-  getSingleOrderByUser,
   getTotalStats,
 };

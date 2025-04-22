@@ -1,25 +1,24 @@
 import Cart from "../../models/cartSchema.js";
 import Order from "../../models/ordersSchema.js";
-import Stripe from 'stripe';
+import Stripe from "stripe";
 import Product from "../../models/productsSchema.js";
 import mongoose from "mongoose";
 import CustomError from "../../utils/customError.js";
 
 const addOrder = async (req, res, next) => {
-    const {paymentMethod}=req.body;
-  
-    if (paymentMethod ==="COD") {
-      return orderCashOnDelivery(req,res,next);
-    } else if (paymentMethod === "Stripe") {
-      return orderWithStripe(req, res, next);
-    } else {
-      return next(new CustomError("Invalid payment method",400));
-    }
-  };
-  
+  const { paymentMethod } = req.body;
+
+  if (paymentMethod === "COD") {
+    return orderCashOnDelivery(req, res, next);
+  } else if (paymentMethod === "Stripe") {
+    return orderWithStripe(req, res, next);
+  } else {
+    return next(new CustomError("Invalid payment method", 400));
+  }
+};
+
 //cash on delivery
-const orderCashOnDelivery = async (req,res,next) => {
- 
+const orderCashOnDelivery = async (req, res, next) => {
   const newOrder = await new Order({
     ...req.body,
     userID: req.user.id,
@@ -31,12 +30,16 @@ const orderCashOnDelivery = async (req,res,next) => {
   newOrder.paymentStatus = "Pending";
   newOrder.shippingStatus = "Processing";
 
-  // will make cart empty after purchase
   let currUserCart = await Cart.findOneAndUpdate(
     { userID: req.user.id },
-    {$set:{products: [] } }
+    { $set: { products: [] } },
+    { new: true } // this returns the updated document
   );
-  await currUserCart.save();
+
+  // Check if the cart was found before saving
+  if (currUserCart) {
+    await currUserCart.save();
+  }
   await newOrder.save();
 
   res.status(201).json({ message: "Order placed successfully" });
@@ -44,7 +47,7 @@ const orderCashOnDelivery = async (req,res,next) => {
 
 // to make an order with stripe
 const orderWithStripe = async (req, res, next) => {
-  const { products,address,totalAmount,firstName,lastName,email,mobile } =
+  const { products, address, totalAmount, firstName, lastName, email, mobile } =
     req.body;
   if (
     !products ||
@@ -56,14 +59,14 @@ const orderWithStripe = async (req, res, next) => {
     !mobile
   ) {
     return next(new CustomError("All fields are required", 400));
-  }else{
-    console.log("fromhere")
+  } else {
+    console.log("fromhere");
   }
   // getting the details of the product
   const productDetails = await Promise.all(
     products.map(async (item) => {
       const product = await Product.findById(item.productID);
-    
+
       return {
         name: product.name,
         image: product.image,
@@ -87,7 +90,7 @@ const orderWithStripe = async (req, res, next) => {
   }));
 
   // creating the stripe session
-  const stripeClient = new Stripe (process.env.STRIPE_PUBLIC_KEY);
+  const stripeClient = new Stripe(process.env.STRIPE_PUBLIC_KEY);
   const session = await stripeClient.checkout.sessions.create({
     payment_method_types: ["card"],
     line_items: lineItems,
@@ -173,8 +176,8 @@ const getOneOrder = async (req, res, next) => {
 
 // to cancel the order
 const cancelOneOrder = async (req, res, next) => {
-    console.log("hhhhh");
-    
+  console.log("hhhhh");
+
   try {
     const order = await Order.findOne({
       _id: req.params.orderID,
@@ -198,9 +201,9 @@ const cancelOneOrder = async (req, res, next) => {
     order.shippingStatus = "Cancelled";
     order.paymentStatus = "Cancelled";
     await order.save();
-    console.log("order",order);
-    
-    await order.populate("products.productID", "name price image")
+    console.log("order", order);
+
+    await order.populate("products.productID", "name price image");
 
     res.status(200).json({
       success: true,
@@ -217,12 +220,11 @@ const cancelOneOrder = async (req, res, next) => {
 // };
 
 export {
-    addOrder,
+  addOrder,
   orderCashOnDelivery,
   getAllOrders,
   getOneOrder,
   cancelOneOrder,
   orderWithStripe,
   StripeSuccess,
-
 };

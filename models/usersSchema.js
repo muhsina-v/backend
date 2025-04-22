@@ -7,7 +7,7 @@ const userSchema = new mongoose.Schema(
     password: { type: String, required: true },
     isBlocked: { type: Boolean, default: false },
     refreshToken: { type: String },
-    role: { type: String, default: "user" }
+    role: { type: String, default: "user" },
   },
   { timestamps: true }
 );

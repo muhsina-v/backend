@@ -3,28 +3,23 @@ import CustomError from "../utils/customError.js";
 
 export const tokenVerify = (req, res, next) => {
   try {
-    const token = req.cookies.token;
-    console.log(token);
-    if (!token) {
-      return res.status(401).send("Authentication token missing");
-    }
-
-    if (token) {
+    const authHeader = req.headers.authorization;
+    if (authHeader) {
+      const token = authHeader.split(" ")[1];
       jwt.verify(token, process.env.JWT_TOKEN, (err, user) => {
         if (err) {
-          res.send(err);
+          console.error("JWT verification error:", err.message);
+          throw new CustomError("token is not valid", 401);
         } else {
           req.user = user;
-          console.log(req.user);
-
           next();
         }
       });
     } else {
-      res.status(404).send("not authenticate");
+      next(new CustomError("you are not authenticated", 401));
     }
   } catch (error) {
-    res.send(error);
+    next(new CustomError(error || "failed to verify authentication", 401));
   }
 };
 
