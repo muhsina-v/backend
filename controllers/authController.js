@@ -101,7 +101,8 @@ const adminLogin = async (req, res, next) => {
   res.json({ message: "Admin successfully logged in", token, currentUser });
 };
 
-//  logout
+//  logout in the case
+
 const logout = async (req, res, next) => {
   res
     .status(200)
